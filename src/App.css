@@ -99,12 +99,14 @@
   background: transparent;
 }
 
-.grid > label > input[type="text"] {
+.grid > label > input[type="text"],
+.grid > label > input[type="tel"] {
   border: 1px solid #d1d5db;
   border-radius: 10px;
 }
 
-.grid > label > input[type="text"]:focus {
+.grid > label > input[type="text"]:focus,
+.grid > label > input[type="tel"]:focus {
   border-color: #1f7a3d;
   box-shadow: 0 0 0 3px rgba(31, 122, 61, 0.15);
 }
@@ -135,6 +137,37 @@ button:disabled {
   margin: 1rem 2rem 0;
   color: #dc2626;
   font-size: 0.9rem;
+}
+
+.wa-sucesso {
+  margin: 1rem 2rem 0;
+  padding: 1rem 1.1rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+}
+
+.wa-sucesso p {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  color: #374151;
+  line-height: 1.45;
+}
+
+.wa-btn {
+  display: inline-block;
+  padding: 0.7rem 1.1rem;
+  background: #25d366;
+  color: #073b1c;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.wa-btn:hover {
+  background: #1ebe5a;
 }
 
 .preview {

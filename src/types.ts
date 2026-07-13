@@ -1,6 +1,8 @@
 export interface FormData {
   /** Nome completo do cliente */
   nome: string;
+  /** WhatsApp do cliente (ex.: (11) 98765-4321) — usado para enviar a proposta */
+  whatsapp: string;
   /** Quantidade de kWh gerado por mês */
   kwhMes: number;
   /** Valor atual do imóvel (R$) */

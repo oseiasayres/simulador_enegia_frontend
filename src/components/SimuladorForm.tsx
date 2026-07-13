@@ -2,12 +2,14 @@ import { useMemo, useState } from "react";
 import { pdf } from "@react-pdf/renderer";
 import { calcular, formatBRL, formatPayback } from "../calc";
 import { PropostaPDF } from "../pdf/PropostaPDF";
+import { linkWhatsapp, montarMensagem, normalizarWhatsapp } from "../whatsapp";
 import type { FormData } from "../types";
 
-type CampoNumerico = Exclude<keyof FormData, "nome">;
+type CampoNumerico = Exclude<keyof FormData, "nome" | "whatsapp">;
 
 const valoresIniciais: FormData = {
   nome: "",
+  whatsapp: "",
   kwhMes: 1000,
   valorImovel: 500000,
   precoKwh: 1.13,
@@ -44,12 +46,16 @@ export function SimuladorForm() {
   const [form, setForm] = useState<FormData>(valoresIniciais);
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [waUrl, setWaUrl] = useState<string | null>(null);
 
   const resultado = useMemo(() => calcular(form), [form]);
   const economiaNegativa = resultado.economiaMensal <= 0;
 
   const handleNome = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((p) => ({ ...p, nome: e.target.value }));
+
+  const handleWhatsapp = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((p) => ({ ...p, whatsapp: e.target.value }));
 
   const handleNumero = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -58,14 +64,21 @@ export function SimuladorForm() {
 
   const gerarPDF = async () => {
     setErro(null);
+    setWaUrl(null);
     if (!form.nome.trim()) {
       setErro("Informe o nome completo do cliente.");
       return;
     }
+    const numero = normalizarWhatsapp(form.whatsapp);
+    if (!numero) {
+      setErro("Informe um WhatsApp válido do cliente (ex.: (11) 98765-4321).");
+      return;
+    }
     setGerando(true);
     try {
+      const dataEmissao = dataHoje();
       const blob = await pdf(
-        <PropostaPDF dados={form} resultado={resultado} dataEmissao={dataHoje()} />,
+        <PropostaPDF dados={form} resultado={resultado} dataEmissao={dataEmissao} />,
       ).toBlob();
 
       const url = URL.createObjectURL(blob);
@@ -76,6 +89,11 @@ export function SimuladorForm() {
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+
+      // Abre o WhatsApp do cliente com a mensagem da proposta pré-preenchida.
+      const link = linkWhatsapp(numero, montarMensagem(form, resultado, dataEmissao));
+      setWaUrl(link);
+      window.open(link, "_blank", "noopener");
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao gerar o PDF.");
     } finally {
@@ -109,6 +127,17 @@ export function SimuladorForm() {
           />
         </label>
 
+        <label className="full">
+          WhatsApp do cliente
+          <input
+            type="tel"
+            value={form.whatsapp}
+            onChange={handleWhatsapp}
+            placeholder="(11) 98765-4321"
+            required
+          />
+        </label>
+
         {campos.map((c) => (
           <label key={c.name}>
             {c.label}
@@ -129,11 +158,24 @@ export function SimuladorForm() {
         ))}
 
         <button type="submit" className="full" disabled={gerando}>
-          {gerando ? "Gerando PDF..." : "Gerar proposta em PDF"}
+          {gerando ? "Gerando PDF..." : "Gerar proposta e enviar no WhatsApp"}
         </button>
       </form>
 
       {erro && <p className="erro">{erro}</p>}
+
+      {waUrl && (
+        <div className="wa-sucesso">
+          <p>
+            ✅ PDF gerado e baixado. A conversa do WhatsApp foi aberta com a
+            mensagem da proposta. <b>Anexe o PDF baixado</b> nessa conversa para
+            enviar ao cliente.
+          </p>
+          <a className="wa-btn" href={waUrl} target="_blank" rel="noopener noreferrer">
+            📲 Abrir WhatsApp do cliente
+          </a>
+        </div>
+      )}
 
       <section className="preview">
         <h2>Prévia do cálculo</h2>
