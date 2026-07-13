@@ -1,0 +1,20 @@
+# Servidor único: serve o SPA e faz proxy da API para o backend.
+# Sem domínio ainda -> escuta HTTP na :80 (acesso pelo IP do servidor).
+# Quando tiver domínio, troque ":80" por "seu.dominio.com" que o Caddy
+# emite o certificado HTTPS (Let's Encrypt) automaticamente.
+:80 {
+	encode gzip
+
+	# API, docs e openapi vão para o backend
+	@backend path /api/* /docs* /redoc* /openapi.json
+	handle @backend {
+		reverse_proxy backend:8000
+	}
+
+	# Frontend estático (SPA) — cai no index.html para rotas do client
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}

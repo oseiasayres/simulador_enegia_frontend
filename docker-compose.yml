@@ -1,0 +1,23 @@
+# Sobe o Simulador de Energia (frontend + backend) em um único servidor.
+#
+# Pré-requisito: os DOIS repositórios clonados lado a lado, por exemplo:
+#   ~/apps/simulador_enegia_frontend   (este repo — rode o compose daqui)
+#   ~/apps/simulador_energia_backend
+#
+# Uso:
+#   docker compose up -d --build
+#   -> acesse http://IP_DO_SERVIDOR
+services:
+  backend:
+    build: ../simulador_energia_backend
+    restart: unless-stopped
+    expose:
+      - "8000"
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
