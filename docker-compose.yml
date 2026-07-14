@@ -19,5 +19,9 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    volumes:
+      # Certificado de origin da Cloudflare (criado no host, fora do Git)
+      - /root/certs:/etc/caddy/certs:ro
     ports:
       - "80:80"
+      - "443:443"

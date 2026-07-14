@@ -1,8 +1,15 @@
 # Servidor único: serve o SPA e faz proxy da API para o backend.
-# Sem domínio ainda -> escuta HTTP na :80 (acesso pelo IP do servidor).
-# Quando tiver domínio, troque ":80" por "seu.dominio.com" que o Caddy
-# emite o certificado HTTPS (Let's Encrypt) automaticamente.
-:80 {
+#
+# HTTPS via Cloudflare (Origin Certificate + modo "Full (strict)"):
+# a Cloudflare faz o proxy (WAF/DDoS/cache) e conecta no origin por HTTPS na :443,
+# onde o Caddy apresenta o certificado de origin da Cloudflare (montado em /etc/caddy/certs).
+# O Caddy redireciona :80 -> :443 automaticamente para os hostnames abaixo.
+#
+# Certificados (fora do Git, bind-mount pelo docker-compose):
+#   /root/certs/origin.pem  e  /root/certs/origin.key
+simulacaopropostasolar.com.br, www.simulacaopropostasolar.com.br {
+	tls /etc/caddy/certs/origin.pem /etc/caddy/certs/origin.key
+
 	encode gzip
 
 	# API, docs e openapi vão para o backend
