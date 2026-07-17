@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { pdf } from "@react-pdf/renderer";
 import { calcular, formatBRL, formatPayback } from "../calc";
 import { PropostaPDF } from "../pdf/PropostaPDF";
+import { anexarCapa } from "../pdf/capa";
 import { linkWhatsapp, montarMensagem, normalizarWhatsapp } from "../whatsapp";
 import type { FormData } from "../types";
 
@@ -46,6 +47,7 @@ export function SimuladorForm() {
   const [form, setForm] = useState<FormData>(valoresIniciais);
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [avisoCapa, setAvisoCapa] = useState<string | null>(null);
   const [waUrl, setWaUrl] = useState<string | null>(null);
 
   const resultado = useMemo(() => calcular(form), [form]);
@@ -64,6 +66,7 @@ export function SimuladorForm() {
 
   const gerarPDF = async () => {
     setErro(null);
+    setAvisoCapa(null);
     setWaUrl(null);
     if (!form.nome.trim()) {
       setErro("Informe o nome completo do cliente.");
@@ -77,9 +80,19 @@ export function SimuladorForm() {
     setGerando(true);
     try {
       const dataEmissao = dataHoje();
-      const blob = await pdf(
+      const proposta = await pdf(
         <PropostaPDF dados={form} resultado={resultado} dataEmissao={dataEmissao} />,
       ).toBlob();
+
+      // Se a capa falhar, entregamos a proposta assim mesmo — mas avisando, para
+      // não sair um PDF sem capa silenciosamente.
+      let blob = proposta;
+      try {
+        blob = await anexarCapa(proposta);
+      } catch (err) {
+        const motivo = err instanceof Error ? err.message : "falha ao carregar";
+        setAvisoCapa(`A proposta saiu sem a capa do contrato — ${motivo}.`);
+      }
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -163,6 +176,8 @@ export function SimuladorForm() {
       </form>
 
       {erro && <p className="erro">{erro}</p>}
+
+      {avisoCapa && <p className="alerta">⚠️ {avisoCapa}</p>}
 
       {waUrl && (
         <div className="wa-sucesso">
